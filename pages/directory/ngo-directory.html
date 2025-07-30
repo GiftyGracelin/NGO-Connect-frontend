@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NGO Directory</title>
+  <link rel="stylesheet" href="../../css/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
+</head>
+<body style="background: url('https://png.pngtree.com/thumb_back/fh260/background/20231226/pngtree-vibrant-watercolor-pastels-a-playful-and-colorful-textured-background-in-blue-image_13865746.png') no-repeat center center fixed; background-size: cover;">
+<div class="container my-5">
+  <h2 class="mb-4">Explore NGOs</h2>
+
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <input type="text" id="searchInput" class="form-control" placeholder="Search by name or cause" />
+    </div>
+    <div class="col-md-4">
+      <select id="categoryFilter" class="form-select">
+        <option selected>Filter by Category</option>
+        <option value="education">Education</option>
+        <option value="health">Health</option>
+        <option value="environment">Environment</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row" id="ngoList"></div>
+</div>
+
+<script>
+  const allNGOs = [
+    {
+      name: "Helping Hands",
+      category: "education",
+      description: "Focused on child education in rural areas.",
+      link: "ngo-profile.html"
+    }
+  ];
+
+  const ngoListDiv = document.getElementById("ngoList");
+  const categoryFilter = document.getElementById("categoryFilter");
+  const searchInput = document.getElementById("searchInput");
+
+  function renderNGOs(filteredNGOs, wasInteracted) {
+    ngoListDiv.innerHTML = "";
+    if (!wasInteracted) return;
+    if (filteredNGOs.length === 0) {
+      ngoListDiv.innerHTML = `
+        <div class="col-12">
+          <div class="alert alert-warning text-center">No NGO found.</div>
+        </div>`;
+      return;
+    }
+    filteredNGOs.forEach(ngo => {
+      const card = document.createElement("div");
+      card.className = "col-md-4 mb-4";
+      card.innerHTML = `
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">${ngo.name}</h5>
+            <p class="card-text">${ngo.description}</p>
+            <a href="${ngo.link}" class="btn btn-success">View NGO</a>
+          </div>
+        </div>`;
+      ngoListDiv.appendChild(card);
+    });
+  }
+
+  let userInteracted = false;
+
+  function filterNGOs() {
+    userInteracted = true;
+    const search = searchInput.value.toLowerCase().trim();
+    const selected = categoryFilter.value.toLowerCase();
+    let filtered = allNGOs;
+    if (selected && selected !== "filter by category") {
+      filtered = filtered.filter(ngo => ngo.category === selected);
+    }
+    if (search !== "") {
+      filtered = filtered.filter(ngo =>
+        ngo.name.toLowerCase().includes(search) ||
+        ngo.description.toLowerCase().includes(search)
+      );
+    }
+    renderNGOs(filtered, userInteracted);
+  }
+
+  categoryFilter.addEventListener("change", filterNGOs);
+  searchInput.addEventListener("input", filterNGOs);
+  renderNGOs([], false);
+</script>
+</body>
+</html>

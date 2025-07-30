@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Donor Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"></head>
+<body style="background:url('https://images.freecreatives.com/wp-content/uploads/2016/04/Free-Website-BAckgrounds1.jpg') no-repeat center center fixed; background-size:cover;">
+<script src="../../js/app.js"></script>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Donor Panel</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#donorNav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="donorNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link text-white" href="#" id="navSummary">Summary</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="#" id="navReceipts">Receipts</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="#" id="navTransparency">Transparency</a></li>
+      </ul>
+      <div class="d-flex align-items-center">
+        <span class="text-white me-3" id="userInfo"></span>
+        <button onclick="logout()" class="btn btn-light btn-sm">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>
+<div class="container my-4 text-white" id="mainDonor"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const user = JSON.parse(localStorage.getItem('loggedInUser'));
+if (!user || user.role!=='donor') location = '../auth/donor-login.html';
+document.getElementById('userInfo').innerText = `Donor | ${user.name}`;
+
+function renderSummary(){
+  mainDonor.innerHTML = '<h3>Campaigns</h3>';
+  DB.campaigns.forEach((c,i) => {
+    mainDonor.innerHTML += `
+      <div class="card mb-2 p-2 text-dark">
+        <h5>${c.title}</h5><p>${c.desc}</p>
+        <button data-i="${i}" class="btn btn-sm btn-light donate">Donate ₹1000</button>
+      </div>`;
+  });
+  document.querySelectorAll('.donate').forEach(b => {
+    b.onclick = () => {
+      const i = b.dataset.i;
+      const c = DB.campaigns[i];
+      DB.donations.push({ donor: user.name, ngo: c.ngo, campaign: c.title, amount: 1000 });
+      saveDB();
+      alert('Thank you for donating!');
+      renderSummary();
+    };
+  });
+}
+
+function renderReceipts(){
+  const list = DB.donations.filter(d => d.donor === user.name);
+  mainDonor.innerHTML = '<h3>Receipts</h3>' + list.map(d =>
+    `<div class="card mb-2 p-2 text-dark">
+      NGO: ${d.ngo}<br>Campaign: ${d.campaign}<br>₹${d.amount}
+    </div>`).join('');
+}
+
+function renderTransparency(){
+  mainDonor.innerHTML = '<h3>Transparency Ledger</h3>' + DB.donations.map(d =>
+    `<div class="card mb-2 p-2 text-dark">
+      Donor: ${d.donor}, NGO: ${d.ngo}, ₹${d.amount}
+    </div>`).join('');
+}
+
+document.getElementById('navSummary').onclick = renderSummary;
+document.getElementById('navReceipts').onclick = renderReceipts;
+document.getElementById('navTransparency').onclick = renderTransparency;
+renderSummary();
+
+function logout(){ localStorage.removeItem('loggedInUser'); location = '../auth/select-login.html'; }
+</script>
+</body>
+</html>

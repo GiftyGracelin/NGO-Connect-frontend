@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="../../css/styles.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
+</head>
+<body style="background:url('https://images.freecreatives.com/wp-content/uploads/2016/04/Free-Website-BAckgrounds1.jpg') no-repeat center center fixed; background-size:cover;">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">NGO Connect</a>
+    <div class="d-flex align-items-center">
+      <span class="text-white me-3" id="userInfo"></span>
+      <button onclick="logout()" class="btn btn-light btn-sm">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container my-4 bg-light bg-opacity-75 p-4 rounded">
+  <h3 id="welcomeMsg">Welcome, Admin</h3>
+
+  <ul class="nav nav-tabs mt-4" id="dashboardTabs">
+    <li class="nav-item"><a class="nav-link active" href="#approvals" data-bs-toggle="tab">NGO Approvals</a></li>
+    <li class="nav-item"><a class="nav-link" href="#reports" data-bs-toggle="tab">Reports</a></li>
+    <li class="nav-item"><a class="nav-link" href="#monitoring" data-bs-toggle="tab">Platform Monitoring</a></li>
+  </ul>
+
+  <div class="tab-content mt-4">
+    <div class="tab-pane fade show active" id="approvals">
+      <h5>Pending NGO Approvals</h5>
+      <ul id="pendingList" class="list-group"></ul>
+    </div>
+
+    <div class="tab-pane fade" id="reports">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card text-center bg-white text-dark mb-3 border-success">
+            <div class="card-body">
+              <h5>Total NGOs</h5>
+              <h3 id="ngoCount">0</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center bg-white text-dark mb-3 border-info">
+            <div class="card-body">
+              <h5>Total Volunteers</h5>
+              <h3 id="volunteerCount">0</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center bg-white text-dark mb-3 border-warning">
+            <div class="card-body">
+              <h5>Total Donations</h5>
+              <h3 id="donationTotal">₹0</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-center bg-white text-dark mb-3 border-danger">
+            <div class="card-body">
+              <h5>Total Campaigns</h5>
+              <h3 id="campaignCount">0</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="monitoring">
+      <h5>Recent Platform Activity</h5>
+      <ul class="list-group" id="activityLog">
+        <li class="list-group-item">Helping Hands NGO joined</li>
+        <li class="list-group-item">Rs.1000 donation made for Education of rural children</li>
+        <li class="list-group-item">NGO Approval rejected</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  const loggedIn = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!loggedIn || loggedIn.role !== "admin") {
+    alert("Please login first.");
+    window.location.href = "../auth/admin-login.html";
+  } else {
+    document.getElementById("userInfo").innerText = `Admin | ${loggedIn.name}`;
+    document.getElementById("welcomeMsg").innerText = `Welcome, ${loggedIn.name}`;
+  }
+
+  const approvals = JSON.parse(localStorage.getItem("pendingNGOs")) || [];
+  const approved = JSON.parse(localStorage.getItem("approvedNGOs")) || [];
+  const list = document.getElementById("pendingList");
+
+  if (approvals.length === 0) {
+    list.innerHTML = "<li class='list-group-item'>No pending approvals</li>";
+  } else {
+    approvals.forEach((ngo, index) => {
+      const li = document.createElement("li");
+      li.className = "list-group-item d-flex justify-content-between align-items-center";
+      li.innerHTML = `
+        <span>${ngo.name} (${ngo.email})</span>
+        <div>
+          <button class="btn btn-info btn-sm me-2" onclick="viewPDF(${index})">View PDF</button>
+          <button class="btn btn-success btn-sm" onclick="approveNGO(${index})">Approve</button>
+        </div>
+      `;
+      list.appendChild(li);
+    });
+  }
+
+  function approveNGO(index) {
+    const ngo = approvals.splice(index, 1)[0];
+    approved.push(ngo);
+    localStorage.setItem("pendingNGOs", JSON.stringify(approvals));
+    localStorage.setItem("approvedNGOs", JSON.stringify(approved));
+    location.reload();
+  }
+
+  function viewPDF(index) {
+    const ngo = approvals[index];
+    if (ngo.proof) {
+      const win = window.open();
+      win.document.write(`<iframe src="${ngo.proof}" width="100%" height="100%"></iframe>`);
+    } else {
+      alert("No proof document found.");
+    }
+  }
+
+  let approvedNGOs = JSON.parse(localStorage.getItem("approvedNGOs"));
+  if (!approvedNGOs || approvedNGOs.length === 0) {
+    approvedNGOs = [{ name: "Helping Hands", email: "help@ngo.org" }];
+    localStorage.setItem("approvedNGOs", JSON.stringify(approvedNGOs));
+  }
+
+  let volunteers = JSON.parse(localStorage.getItem("volunteers"));
+  if (!volunteers || volunteers.length === 0) {
+    volunteers = [{ name: "Sample Volunteer", email: "volunteer@example.com" }];
+    localStorage.setItem("volunteers", JSON.stringify(volunteers));
+  }
+
+  let campaigns = JSON.parse(localStorage.getItem("campaigns"));
+  if (!campaigns) {
+    campaigns = [];
+  }
+
+  let donations = JSON.parse(localStorage.getItem("donations"));
+  if (!donations) {
+    donations = [];
+  }
+
+  const ngoCount = approvedNGOs.length;
+  const volunteerCount = volunteers.length;
+  const donationTotal = donations.reduce((sum, d) => sum + parseFloat(d.amount || 0), 0);
+  const campaignCount = campaigns.length;
+
+  document.getElementById("ngoCount").innerText = ngoCount;
+  document.getElementById("volunteerCount").innerText = volunteerCount;
+  document.getElementById("donationTotal").innerText = `₹${donationTotal}`;
+  document.getElementById("campaignCount").innerText = campaignCount;
+
+  function logout() {
+    localStorage.removeItem("loggedInUser");
+    alert("Logged out successfully.");
+    window.location.href = "../auth/select-login.html";
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

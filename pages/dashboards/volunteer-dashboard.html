@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Volunteer Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="../../css/styles.css"/>
+</head>
+<body style="background:url('https://images.freecreatives.com/wp-content/uploads/2016/04/Free-Website-BAckgrounds1.jpg') no-repeat center center fixed; background-size:cover;">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-warning">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">NGO Connect</a>
+    <div class="d-flex align-items-center">
+      <span class="text-dark fw-bold me-3" id="userInfo"></span>
+      <button onclick="logout()" class="btn btn-outline-dark btn-sm">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container my-4 bg-light bg-opacity-75 p-4 rounded">
+  <h3 id="welcomeMsg">Welcome, Volunteer</h3>
+
+  <ul class="nav nav-tabs mt-4" id="dashboardTabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="events-tab" data-bs-toggle="tab" href="#my-events" role="tab">My Events</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="join-tab" data-bs-toggle="tab" href="#join-events" role="tab">Join Events</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="cert-tab" data-bs-toggle="tab" href="#certificates" role="tab">Certificates</a>
+    </li>
+  </ul>
+
+  <div class="tab-content mt-4">
+    <div class="tab-pane fade show active" id="my-events" role="tabpanel">
+      <h5>Upcoming Joined Events</h5>
+      <div id="joinedEventsList">
+        <ul id="eventList" class="list-group"></ul>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="join-events" role="tabpanel">
+      <h5 class="mt-3">Join a Campaign/Event by NGOs</h5>
+      <form id="joinEventForm" class="mt-3">
+        <div class="mb-3">
+          <label for="campaignSelect" class="form-label">Select Campaign</label>
+          <select class="form-select" id="campaignSelect" required>
+            <option value="" disabled selected>Select an event...</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="eventDate" class="form-label">Event Date</label>
+          <input type="text" class="form-control" id="eventDate" readonly>
+        </div>
+        <button type="submit" class="btn btn-success">Join Event</button>
+        <div id="joinStatus" class="mt-2"></div>
+      </form>
+    </div>
+
+    <div class="tab-pane fade" id="certificates" role="tabpanel">
+      <h5 class="mt-3">Your Certificates</h5>
+      <p>No certificates yet.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const loggedIn = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!loggedIn || loggedIn.role !== "volunteer") {
+    alert("Please login first.");
+    window.location.href = "../auth/volunteer-login.html";
+  } else {
+    document.getElementById("userInfo").innerText = `Volunteer | ${loggedIn.name}`;
+    document.getElementById("welcomeMsg").innerText = `Welcome, ${loggedIn.name}`;
+  }
+
+  function logout() {
+    localStorage.removeItem("loggedInUser");
+    alert("Logged out successfully.");
+    window.location.href = "../auth/select-login.html";
+  }
+
+  function loadJoinedEvents() {
+    const list = document.getElementById('eventList');
+    list.innerHTML = '';
+    const events = JSON.parse(localStorage.getItem('joinedEvents')) || [];
+    const filtered = events.filter(e => e.volunteer === loggedIn.name);
+    if (filtered.length === 0) {
+      list.innerHTML = '<li class="list-group-item">No events joined yet.</li>';
+      return;
+    }
+    filtered.forEach(ev => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item';
+      li.innerText = `${ev.name} (${ev.ngo}) - ${new Date(ev.date).toDateString()}`;
+      list.appendChild(li);
+    });
+  }
+
+  function populateCampaignDropdown() {
+    const campaigns = [
+      { name: "Clean-Up Drive", date: "2025-08-04", ngo: "GreenWorld" },
+      { name: "Blood Donation Camp", date: "2025-08-12", ngo: "LifeLine NGO" },
+      { name: "Tree Plantation", date: "2025-09-01", ngo: "EcoRoots" }
+    ];
+    localStorage.setItem("ngocampaigns", JSON.stringify(campaigns));
+    const select = document.getElementById('campaignSelect');
+    select.innerHTML = `<option value="" disabled selected>Select an event...</option>`;
+    campaigns.forEach((c, index) => {
+      const opt = document.createElement('option');
+      opt.value = index;
+      opt.textContent = `${c.name} (${c.ngo})`;
+      select.appendChild(opt);
+    });
+    select.addEventListener('change', function () {
+      const selected = campaigns[this.value];
+      document.getElementById('eventDate').value = selected.date;
+    });
+  }
+
+  const joinForm = document.getElementById('joinEventForm');
+  const joinStatus = document.getElementById('joinStatus');
+
+  joinForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const selectedIndex = document.getElementById('campaignSelect').value;
+    const campaigns = JSON.parse(localStorage.getItem('ngocampaigns')) || [];
+    const selected = campaigns[selectedIndex];
+    if (!selected) return;
+    let events = JSON.parse(localStorage.getItem('joinedEvents')) || [];
+    const alreadyJoined = events.some(ev =>
+      ev.name === selected.name &&
+      ev.ngo === selected.ngo &&
+      ev.volunteer === loggedIn.name
+    );
+    if (alreadyJoined) {
+      joinStatus.textContent = 'You have already joined this event!';
+      joinStatus.className = 'mt-2 text-danger';
+      return;
+    }
+    events.push({ 
+      name: selected.name, 
+      date: selected.date, 
+      ngo: selected.ngo,
+      volunteer: loggedIn.name 
+    });
+    localStorage.setItem('joinedEvents', JSON.stringify(events));
+    joinStatus.textContent = 'Event joined successfully!';
+    joinStatus.className = 'mt-2 text-success';
+    joinForm.reset();
+    loadJoinedEvents();
+  });
+
+  window.addEventListener('load', () => {
+    loadJoinedEvents();
+    populateCampaignDropdown();
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
